@@ -1,0 +1,524 @@
+---
+title: "COVID-19 Pandemic in the Republic of Hungary"
+author: "Minoth Savinka - AS2021519"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Global Function
+# Function to replace missing and negative values in a data frame
+replace_na_and_negatives_with_neighbors_df <- function(y) {
+  # Iterate over each column in the data frame
+  for (col_name in names(y)) {
+    col <- y[[col_name]]
+    for (i in 2:(length(col) - 1)) {
+      if (is.na(col[i]) || col[i] < 0) {  # Check if the value is NA or negative
+        col[i] <- mean(c(col[i - 1], col[i + 1]), na.rm = TRUE)
+      }
+    }
+    y[[col_name]] <- col
+  }
+  return(y)
+}
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Load libraries
+library(devtools)
+devtools::install_github("thiyangt/sta3262")
+library(sta3262)
+library(coronavirus)
+library(dplyr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(skimr)
+library(knitr)
+
+```
+
+##  **1. About the country  Hungary**
+
+### **Geographical view of the country**
+
+> Hungary is an island nation mostly found in the Carpathian Basin of Central Europe. It is roughly 93,030 square kilometers (36,000 square miles) in size. Known for its rich soil and high agricultural output, the Great Hungarian Plain occupies the country's largely flat geography. The Danube, which flows through Budapest, the country's capital, and the Tisza are the two main rivers that split Hungary. Traditionally, the landscape has been divided into three main regions as the Northern Mountains, which comprise portions of the Carpathian range, the Great Plain, and Transdanubia (west of the Danube). A wide range of climates and ecosystems are supported by this varied environment, adding to Hungary's rich natural heritage.
+
+ * Capital    :- Budapest
+ * Population :- 9,580,000
+ * Religion   :- Roman Catholicism, Greek Catholicism, Calvinism,      Lutheranism
+ * Languages  :- English
+ 
+### **Economy**
+> Hungary has a mixed economy that is strongly focused on exports, with manufacturing and services accounting for an important portion of the country's GDP. The nation is one of the biggest exporters in Central Europe and is well-known for its electronics and automotive sectors. Fertile plains get a variety of crops, therefore agriculture also contributes to GDP, but at a decrease over time. Hungary's economy is known as "moderately free," having undergone a number of changes in recent years to encourage growth and stability. Hungary retains a strong position inside the European Union and draws in international investment despite obstacles.
+
+
+## **2. Covid-19 Pandemic in Hungary**
+> On March 4, 2020, there were the first confirmed situations of the COVID-19 pandemic in Hungary. Early in the epidemic, the Hungarian government enforced strong non-pharmaceutical interventions, which helped in limiting the first wave of illnesses. But the nation was hit by several waves of the virus, which resulted in high rates of illness and death as well as an uneven impact across various populations and geographical areas. During the pandemic, Hungary also encountered difficulties in providing healthcare, specifically in treating non-COVID diseases like ischemic stroke. Hungary had given millions of doses of the vaccine by March 2022 in an attempt to stop the virus's spread.  
+
+## **3. Exploratory Data Analysis of the COVID-19 Pandemic in the Republic of Hungary**
+
+### **Structure of data**
+* **date**        : Date in YYYY-MM-DD format.
+* **province**     : Name of province/state, for countries where data is provided split across multiple provinces/states.
+* **country**      : Name of country.
+* **lat**         : Latitude of center of geographic region, defined as either country or, if available, province.
+* **long**         : Longitude of center of geographic region, defined as either country or, if available, province.
+* **type**         : An indicator for the type of cases (confirmed, death, recovered).
+* **cases**        : Number of cases on given date.
+* **uid**          : Country code
+* **iso2**        : Officially assigned country code identifiers with two-letter
+* **iso3**         : Officially assigned country code identifiers with three-letter
+* **code3**        : UN country code
+* **combined_key** : Country and province (if applicable)
+* **population**  : Country or province population
+* **continent_name** : Continent name
+* **continent_code** : Continent code
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+# filter Hungary from coronavirus data set
+hungary_corona_df <- coronavirus %>% filter(country == "Hungary")
+
+
+# Create a data frame with cases, type, and date for Hungary
+hungary_corona <- hungary_corona_df %>% select(date, country, cases, type)
+
+
+```
+
+#### **Summary about the country Hungary in  Corona Data set**
+```{r,echo=FALSE, message=FALSE,warning=FALSE}
+# Get the summary of the filtered Hungary data
+library(skimr)
+skim(hungary_corona)
+
+```
+
+**This is a summery about Hungary data set which is filtered from the coronavirus data set.There are data from 2020-01-22 to 2023-03-09.**
+
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, results='hide'}
+# Check if there are any missing values remaining
+any_missing <- anyNA(hungary_corona)
+
+# Check if there are any negative values in the data frame
+any_negative <- any(hungary_corona < 0)
+
+# Combine the results to check for both missing and negative values
+any_missing_or_negative <- any_missing | any_negative
+
+print(any_missing_or_negative) # TRUE if there are missing or negative values if not FALSE
+
+if(any_missing_or_negative == TRUE){
+# Apply the updated function to the Hungary data set(Here refer to global function)
+country_df <- replace_na_and_negatives_with_neighbors_df(hungary_corona)
+}
+
+# Check again if there are any missing values remaining after run function
+any_missing <- anyNA(hungary_corona)
+
+# check again if there are any negative values remaining after run function
+any_negative <- any(hungary_corona < 0)
+
+# Combine the results to check for both missing and negative values
+any_missing_or_negative <- any_missing | any_negative
+
+print(any_missing_or_negative) # TRUE if there are missing or negative values, otherwise FALSE
+
+```
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+confirmed_hungary_corona <- hungary_corona %>% filter(type=="confirmed")
+
+```
+
+#### **About the confirmed cases in Hungary**
+#### confirmed cases{.tabset}
+
+##### plot
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+## Confirmed cases plot
+ggplot(confirmed_hungary_corona, aes(x=date, y=cases)) + geom_line(size=1, colour="red")  + labs(x= "Date ", y= "Confirmed cases", title = "Confirmed cases in Hungary ", caption = "Figure 1") +  theme_minimal()
+
+```
+
+**Above plot (Figure 1) lower values  are in the 2020 and early 2021 but in early 2022 there higher values of corona confirmed  patients and highest confirmed patients are around 45000,it can confirmed from the next tab where we can see it from the summery**
+
+##### Summary 
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+## Confirmed cases summery
+skim(confirmed_hungary_corona)
+
+```
+
+**This summary about confirmed cases in this country it' gives that there are 1143 confirmed patients through out the considered time period and the height amount of confirmed patients are 45047.**
+
+#### **About the death cases in Hungary**
+#### Death cases{.tabset}
+##### Summery
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+## Death cases summery
+
+death_hungary_corona <- hungary_corona %>% filter(type=="death")
+skim(death_hungary_corona)
+
+```
+
+**This summary shows that maximum death in a day is 489 and again showing there are no null values**
+
+##### plot
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+## Death cases plot
+
+ggplot(death_hungary_corona, aes(x=date, y=cases)) + geom_line(size=1, colour="lightblue") + labs(x= "Dates ", y= "Death cases", title = "Death cases in Hungary", caption = "Figure 2") +  theme_minimal()
+
+```
+
+**In the above figure (Figure 2) depicts highest value of deaths are in latter part of 2021. In 2023 death rate is decreasing compared to other years.**
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+recovery_hungary_corona <- hungary_corona %>% filter(type=="recovery")
+```
+
+#### **About the death cases in Hungary**
+#### Recovery  cases{.tabset}
+
+##### Plot
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+ggplot(recovery_hungary_corona, aes(x=date, y=cases)) + geom_line(size=1,  colour="orange") + labs(x= "Date ", y= "recovery cases", title = "Recovery cases in Hungary", caption = "Figure 3") +  theme_minimal()
+
+```
+
+**This figure (Figure 3) emphasize that there higher amount of recovery in corona patients in short time period it show their health sector is good.The day with largest amount of recovery with the amout around 10 000.**
+
+##### Summary
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+## recovery cases  
+library(skimr)
+skim(recovery_hungary_corona)
+
+```
+**This tab shows summery of recovery case with there mean value of recovery 655.97 that's means around 655 patients are recovered averagely in this time period which have data.**
+
+
+####  Active cases in Hungary{.tabset}
+##### Active plot
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# Convert to tibble and select specific columns
+hungary_corona <- hungary_corona %>%
+as_tibble() %>%
+select(date, type, cases)
+
+
+```
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+# Pivot wider to separate 'confirmed', 'deaths', and 'recovered' into columns
+wide_hungary_corona <- hungary_corona %>%
+pivot_wider(
+  names_from = type, 
+  values_from = cases )
+
+```
+
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+
+
+
+# Initialize the active cases column
+wide_hungary_corona <- wide_hungary_corona %>%
+mutate(active = 0)
+
+
+# Loop through the data to calculate active cases
+for (i in 1:nrow(wide_hungary_corona)) {
+  if (i == 1) {
+    # For the first day, calculate active cases directly
+    wide_hungary_corona$active[i] <- wide_hungary_corona$confirmed[i] - wide_hungary_corona$death[i] - wide_hungary_corona$recovery[i]
+  } else {
+    # For subsequent days, use the previous day's active cases
+    wide_hungary_corona$active[i] <- wide_hungary_corona$confirmed[i] - wide_hungary_corona$death[i] - wide_hungary_corona$recovery[i] + wide_hungary_corona$active[i - 1]
+  }
+}
+
+
+```
+
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+# Plot the active cases for four countries
+ggplot(wide_hungary_corona, aes(x=date, y=active)) +
+geom_line(size=1,  colour="darkblue") + 
+labs(x= "Dates ",
+     y= "Active cases",
+     title = "Active cases in hungary", caption = "Figure 4") + 
+ scale_y_continuous(limits = c(0, max(wide_hungary_corona$active)), labels = scales::comma) +  theme_minimal()
+
+```
+**This figure (Figure 4) depicts the active cases is increasing with time it conclude that virus is spreaded throughout the country, active cases increases nearly upto 1 500 00.**
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, eval=FALSE}
+# Check if Ukraine is present in the dataset
+Ukraine_exists <- "Ukraine" %in% coronavirus$country
+
+# Print the result
+if (Ukraine_exists) {
+  print("Ukraine is present in the dataset.")
+} else {
+  print("Ukraine is not present in the dataset.")
+  
+}
+
+# Check if Austria is present in the dataset
+Austria_exists <- "Austria" %in% coronavirus$country
+
+# Print the result
+if (Austria_exists) {
+  print("Austria is present in the dataset.")
+} else {
+  print("Austria is not present in the dataset.")
+  
+}
+
+# Check if Romania is present in the dataset
+Romania_exists <- "Romania" %in% coronavirus$country
+
+# Print the result
+if (Romania_exists) {
+  print("Romania is present in the dataset.")
+} else {
+  print("Romania is not present in the dataset.")
+  
+}
+
+```
+
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+# Three countries around Hungary to compare
+countries <- c("Ukraine", "Austria", "Romania", "Hungary")
+
+# Filter data of three countries and Hungary
+country_data <- coronavirus %>%
+filter(country %in% countries & type %in% c("confirmed", "recovery", "death"))
+
+# Create a data frame with cases, type, and date
+country_df <- country_data %>%
+select(date, country, cases, type)
+
+```
+
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, results='hide'}
+# Check if there are any missing values remaining
+any_missing <- anyNA(country_df)
+
+# Check if there are any negative values in the data frame
+any_negative <- any(country_df < 0)
+
+# Combine the results to check for both missing and negative values
+any_missing_or_negative <- any_missing | any_negative
+
+print(any_missing_or_negative) # TRUE if there are missing or negative values, otherwise FALSE
+
+
+if(any_missing_or_negative == TRUE){
+# Apply the updated function to the Hungary COVID-19 data
+country_df <- replace_na_and_negatives_with_neighbors_df(country_df)
+}
+
+# Check again if there are any missing values remaining after appling function
+any_missing <- anyNA(country_df)
+
+# check again if there are any negative values remaining after appling function
+any_negative <- any(country_df < 0)
+
+# Combine the results to check for both missing and negative values
+any_missing_or_negative <- any_missing | any_negative
+
+print(any_missing_or_negative) # TRUE if there are missing or negative values, otherwise FALSE
+
+```
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+
+country_df_confirmed <- country_df %>% filter(type=="confirmed")
+
+
+```
+
+## Dataset with Ukraine, Austria, Romania, Hungary{.tabset}
+
+#### Countries (Ukraine, Austria, Romania) compairision of confirmed with Hungary{.tabset}
+
+##### Plot
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+
+# Plot the confirmed cases for four countries
+ggplot(country_df_confirmed, aes(x = date, y = cases, color = country, group = country)) +
+geom_line(size = 1) +
+facet_wrap(~country, nrow=4)+
+geom_point() +
+labs(title = "Confirmed COVID-19 Cases",
+     x = "Date",
+     y = "Confirmed Cases",
+     color = "Country", caption = "Figure 5") +
+theme_minimal()
+
+```
+
+**Above figure(Figure 5) reveals that most confirmed corona cases came from year 2022 of these 4 countries. Ukraine have the highest number of confirmed corona patients that is around 80000.**
+
+##### Compare averages
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+# Calculate total confirmed cases for four countries
+country_totals_confirmed <- country_df_confirmed %>%
+group_by(country) %>%
+summarise(total_confirmed = sum(cases))
+
+# Calculate average confirmed cases for four countries
+country_averages_confirmed <- country_df_confirmed %>%
+group_by(country) %>%
+summarise(average_confirmed = mean(cases))
+
+# Combine the totals and averages into a single table
+combined_table <- left_join(country_totals_confirmed , country_averages_confirmed, by = "country")
+
+kable(combined_table)
+
+# Plot the averages using a boxplot
+ggplot(country_averages_confirmed, aes(x = country, y = average_confirmed)) +
+geom_boxplot() +
+labs(title = "Average Confirmed Cases of Countries", y = "Average Confirmed Cases", x = "Country",caption = "Figure 6") +theme_minimal()
+
+```
+
+**This figure shows that average values of confirmed corona cases in countries Austira and Ukraine in higher than Hungry and Romania.Lowest average confirmed cases carries with Hungary it's nearly 2000.** 
+
+
+
+#### Countries (Ukraine, Austria, Romania) compairision of recovery with Hungary{.tabset}
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+
+country_df_recovery <- country_df %>% filter(type=="recovery")
+
+```
+
+##### Plot
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+
+# Plot the recovary  cases for four countries
+ggplot(country_df_recovery, aes(x = date, y = cases, color = country, group = country)) +
+  geom_line(size = 1) +
+  facet_wrap(~country, nrow=4)+
+  geom_point() +
+  labs(title = "Recovery COVID-19 Cases",
+       x = "Date",
+       y = "recovery Cases",
+       color = "Country", caption = "Figure 7") +
+  theme_minimal()
+```
+
+**Above figure (Figure 7) shows that Ukraine and Romania have more recovery patients than other two countries. Almost four plots reveals that year 2020 latter part and year 2021 early part have more recovery patients than other considered times. Romania have the largest number of recovery patients it's almost 50000.**
+
+##### Compare averages
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# Calculate total recovery cases for four countries
+country_totals_recovery <- country_df_recovery %>%
+group_by(country) %>%
+summarise(total_recovery = sum(cases))
+
+# Calculate average recovery cases for four countries
+country_averages_recovery <- country_df_recovery %>%
+group_by(country) %>%
+summarise(average_recovery = mean(cases))
+
+# Combine the totals and averages into a single table
+result_table <- left_join(country_totals_recovery , country_averages_recovery, by = "country")
+
+# Display the table
+kable(result_table)
+
+# Plot the averages using a boxplot
+ggplot(country_averages_recovery, aes(x = country, y = average_recovery)) +
+geom_boxplot() +
+labs(title = "Average recovery Cases of Countries", y = "Average recovery Cases", x = "Country",caption = "Figure 8")+
+theme_minimal()
+```
+**Here averages of Ukraine recovery patients show significant difference. Ukraine has the highest recovery average it's around 2000. Austria and Hungary almost same in their recovery averages.** 
+
+
+#### Countries (Ukraine, Austria, Romania) compairision of death with Hungary{.tabset}
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+
+country_df_death <- country_df %>% filter(type=="death")
+
+```
+
+##### Plot
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+
+# Plot the death cases for four countries
+ggplot(country_df_death, aes(x = date, y = cases, color = country, group = country)) +
+  geom_line(size = 1) +
+  facet_wrap(~country, nrow=4)+
+  geom_point() +
+  labs(title = "Death COVID-19 cases",
+       x = "Date",
+       y ="Death Cases",
+       color = "Country", caption = "Figure 9") +
+  theme_minimal()
+```
+
+**Above figure (Figure 9) shows that Ukraine have more death and least amount are in Austria, average number of deaths in Hungary and Romania**
+
+##### Compare averages
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# Calculate total death cases for four countries
+country_totals_death <- country_df_death %>%
+group_by(country) %>%
+summarise(total_death = sum(cases))
+
+# Calculate average death cases for four countries
+country_averages_death <- country_df_death %>%
+group_by(country) %>%
+summarise(average_death = mean(cases))
+
+# Combine the totals and averages into a single table
+result_table <- left_join(country_totals_death , country_averages_death, by = "country")
+
+# Display the table
+kable(result_table)
+
+# Plot the averages using a boxplot
+ggplot(country_averages_death, aes(x = country, y = average_death)) +
+geom_boxplot() +
+labs(title = "Average death Cases of Countries", y = "Average death Cases", x = "Country",caption = "Figure 10")+
+theme_minimal()
+```
+**Here averages are shown in Figure 10 their are significant different in  averages Austria having low average and Ukraine having highest average around 100 ** 
+
+##  **4. Conclusion**
+
+> In the country Hungary above graphs show less number of recovery,daeth was inceasing and also active cases  increaing with time.This depict how harsh iving un Hungary those days.
+The information for COVID-19 in Hungary reveals a high percentage of confirmed cases and a significant recovery rate among the population. But the death impact shows how serious the pandemic is, especially for those most at risk. The research illustrates how underlying conditions affect death rates, which were especially high during the pandemic's peak waves. Reflecting worldwide patterns, Hungary's reaction and healthcare system faced difficulties in containing the virus's spread and death.
+When compaing with other counties around Hungary this have lower rate it's may this country have low population compare to other counties. 
+
+##  **5. Discussion**
+> First extracted Hungary data set from the whole data set of coronavirus then filtered date,cases,type with counter from the extract.In my data set of Hungary there were no negative values or NA values.Then got the summary.Then describe about confirmed, recover and death cases in Hungary with plots and summary.Next write a function to get active cases and analysis about.Finally extract three  neighborhood countries and remove negative values and do comparison with Hungary according to confirmed, recover and death cases for the COVID-19.
+
+
+
+
+
